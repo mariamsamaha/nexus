@@ -3,6 +3,7 @@
 #include <string.h>
 #include <math.h>
 #include <stdbool.h>
+#include <time.h>
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
@@ -193,6 +194,10 @@ int main(int argc, char *argv[])
         fprintf(stderr, "Error: Out of memory\n");
         return 1;
     }
+    clock_t start, end;
+    double cpu_time_used;
+    start = clock();
+
     sobel_magnitude(input, mag);
 
     Image *out = create_image(input->width, input->height, 255);
@@ -203,7 +208,10 @@ int main(int argc, char *argv[])
         fprintf(stderr, "Error: Out of memory\n");
         return 1;
     }
-    threshold_image(mag, out, threshold);
+    end = clock();
+    cpu_time_used = ((double)(end-start)) / CLOCKS_PER_SEC;
+
+    printf("sequential runtime: %.6f seconds\n", cpu_time_used);
 
     printf("Saving output image: %s\n", argv[2]);
     if (save_pgm(argv[2], out) != 0)
@@ -219,4 +227,5 @@ int main(int argc, char *argv[])
     free_image(input);
     printf("Done.\n");
     return 0;
+
 }
