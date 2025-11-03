@@ -111,3 +111,59 @@ convert data/dog_edges.pgm data/dog_edges.png
 ### Notes
 
 - `stb_image.h` is a single-header loader included in `src/` that lets the C program read common formats without extra libraries. If you want to remove it, restrict inputs to PGM and run conversions beforehand.
+
+---
+
+# 🧪 test.c — Memory Benchmark (Stride / Block Access)
+
+This benchmark tests how memory access patterns affect performance, useful for analyzing cache locality and bandwidth during Phase 1 optimization.
+
+---
+
+## *Build*
+
+```bash
+# Linux / macOS
+gcc -O3 -march=native -std=c11 -o memtest src/test.c -lm
+# or
+clang -O3 -march=native -std=c11 -o memtest src/test.c -lm
+```
+---
+
+## *Usage*
+
+```bash
+./memtest <mode> <param> [iters=5] [array_MB=512]
+```
+Modes:
+* stride <stride_in_elements> walks memory with a fixed stride (tests spatial locality).
+Example:
+```bash
+./memtest stride 1 5 512
+```
+* block <block_size_in_elems> processes memory in 2D tiles (models tiling/local reuse).
+Example:
+```bash
+./memtest block 64 5 512
+```
+Output: per-iteration time, accesses, bytes read, average access time (ns), checksum, and bandwidth (MB/s).
+
+---
+
+## *Collecting Hardware Counters (Linux)*
+```bash
+sudo perf stat -e cycles,instructions,cache-references,cache-misses,L1-dcache-loads,L1-dcache-load-misses \
+-o perf_stride_1.txt ./memtest stride 1 5 512
+```
+Run a sweep for multiple strides:
+```bash
+for s in 1 2 4 8 16 32 64 128 256 512 1024; do
+  echo "stride=$s"
+  sudo perf stat -e cycles,instructions,cache-references,cache-misses,L1-dcache-loads,L1-dcache-load-misses \
+    -o perf_stride_${s}.txt ./memtest stride $s 5 512
+done
+```
+Tip: Pin to one core for reproducibility:
+```bash
+taskset -c 0 sudo perf stat -e ... ./memtest stride 1 5 512
+```
