@@ -8,11 +8,11 @@
 
 ## 🎯 Key Features and Goals
 
-* **High-Performance Edge Detection:** Implementing established algorithms (e.g., Canny, Sobel) with a focus on speed.
-* **Parallel Computing:** Utilizing multi-core architectures to process image data concurrently.
-* **Distributed Scalability:** Spreading the workload across multiple machines/nodes for handling large datasets.
-* **Fault Tolerance:** Designing the system to continue operation even if individual nodes or processes fail.
-* **Performance Benchmarking:** Rigorous measurement and comparison of speedup across the different implementation phases.
+- **High-Performance Edge Detection:** Implementing established algorithms (e.g., Canny, Sobel) with a focus on speed.
+- **Parallel Computing:** Utilizing multi-core architectures to process image data concurrently.
+- **Distributed Scalability:** Spreading the workload across multiple machines/nodes for handling large datasets.
+- **Fault Tolerance:** Designing the system to continue operation even if individual nodes or processes fail.
+- **Performance Benchmarking:** Rigorous measurement and comparison of speedup across the different implementation phases.
 
 ---
 
@@ -22,30 +22,92 @@ The development of Nexus is structured into three progressive phases, each build
 
 ### Phase 1: Shared-Memory Parallelism (Single-Node Optimization) ⚡
 
-* **Focus:** Implementing **threads** and/or **processes** (e.g., using OpenMP, pthreads, or language-native features) to leverage multi-core CPUs.
-* **Goal:** Demonstrate initial, significant speedup compared to a sequential implementation on a single machine.
-* **Implementation:** Parallelization of core image filtering and gradient computation steps.
+- **Focus:** Implementing **threads** and/or **processes** (e.g., using OpenMP, pthreads, or language-native features) to leverage multi-core CPUs.
+- **Goal:** Demonstrate initial, significant speedup compared to a sequential implementation on a single machine.
+- **Implementation:** Parallelization of core image filtering and gradient computation steps.
 
 ### Phase 2: Distributed Computing (Multi-Node Scaling) 🌐
 
-* **Focus:** Moving to a multi-node environment using a message-passing interface (e.g., **MPI** or similar RPC framework).
-* **Goal:** Achieve horizontal scalability by partitioning image data and processing it across a cluster of machines.
-* **Implementation:** Development of communication protocols for data distribution, synchronization, and result aggregation.
+- **Focus:** Moving to a multi-node environment using a message-passing interface (e.g., **MPI** or similar RPC framework).
+- **Goal:** Achieve horizontal scalability by partitioning image data and processing it across a cluster of machines.
+- **Implementation:** Development of communication protocols for data distribution, synchronization, and result aggregation.
 
 ### Phase 3: Big Data Processing & Fault Tolerance 🛡️
 
-* **Focus:** Integrating a **big-data framework** (e.g., Apache Spark, Hadoop MapReduce) to manage large-scale data and inherent fault tolerance.
-* **Goal:** Process massive datasets (e.g., video streams, large image archives) efficiently while ensuring the system can recover from node failures without losing data.
-* **Implementation:** Adapt the edge detection logic to run as a distributed job within the chosen framework, utilizing its built-in mechanisms for resilience and scheduling.
+- **Focus:** Integrating a **big-data framework** (e.g., Apache Spark, Hadoop MapReduce) to manage large-scale data and inherent fault tolerance.
+- **Goal:** Process massive datasets (e.g., video streams, large image archives) efficiently while ensuring the system can recover from node failures without losing data.
+- **Implementation:** Adapt the edge detection logic to run as a distributed job within the chosen framework, utilizing its built-in mechanisms for resilience and scheduling.
 
 ---
 
-## 🛠️ Technologies 
-
-
+## 🛠️ Technologies
 
 ---
 
 ## 🚀 Getting Started
 
-Instructions on how to clone the repository, install dependencies, and run the various phase implementations will be detailed here.
+Below is the minimal end-to-end flow: convert inputs as needed, run the Sobel edge detector, and (optionally) convert the result to PNG.
+
+### 1) Dependencies
+
+- C build tools (clang/gcc)
+- Python 3
+- Python: Pillow (for conversions)
+
+Install Pillow:
+
+```bash
+python3 -m pip install --user Pillow
+```
+
+### 2) Build the sequential Sobel tool
+
+The `sequential` binary reads any common image via `stb_image.h` (e.g., JPEG/PNG) and outputs a PGM edge map.
+
+```bash
+# Example (adjust if you have a different build setup)
+clang -O2 -o sequential src/sequential.c -lm
+```
+
+### 3) Convert input (optional)
+
+If you prefer/need to work with PGM explicitly, you can convert images first:
+
+```bash
+python3 convert_to_pgm.py data/dog.jpg data/dog.pgm
+```
+
+### 4) Run edge detection
+
+Usage:
+
+```bash
+./sequential <input_image> <output_edges.pgm> [threshold]
+```
+
+- `input_image`: JPEG/PNG/PGM supported
+- `output_edges.pgm`: binary PGM edge map
+- `threshold` (optional): 0–255, default 100
+
+Example:
+
+```bash
+./sequential data/dog.jpg data/dog_edges.pgm 100
+```
+
+### 5) Convert PGM edges to PNG (optional)
+
+```bash
+python3 convert_to_png.py data/dog_edges.pgm data/dog_edges.png
+```
+
+If you do not have Pillow, you can install it as above. Alternatively, install ImageMagick and use `convert` directly:
+
+```bash
+brew install imagemagick
+convert data/dog_edges.pgm data/dog_edges.png
+```
+
+### Notes
+
+- `stb_image.h` is a single-header loader included in `src/` that lets the C program read common formats without extra libraries. If you want to remove it, restrict inputs to PGM and run conversions beforehand.
