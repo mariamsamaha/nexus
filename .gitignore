@@ -1,1 +1,3 @@
 .venv
+sobel_mbi
+*.pgm
