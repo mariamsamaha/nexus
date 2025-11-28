@@ -11,10 +11,10 @@
  * - Writes output as PGM (binary P5)
  *
  * Compile:
- *   mpicc -O3 -std=c99 -o sobel_mpi sobel_mpi.c
+ * mpicc -O3 -std=c99 -o sobel_mpi sobel_mpi.c -lm
  *
  * Run:
- *   mpirun -np 4 ./sobel_mpi input.png output.pgm [threshold]
+ * mpirun -np 4 ./sobel_mpi input.png output.pgm [threshold]
  *
  * Requires stb_image.h .
  */
@@ -172,69 +172,59 @@ int main(int argc, char **argv) {
     int above = (rank == 0) ? MPI_PROC_NULL : rank - 1;
     int below = (rank == size - 1) ? MPI_PROC_NULL : rank + 1;
 
-    /* Non-blocking halo exchange */
+    //post non-blocking communication
     MPI_Request reqs[4];
     int reqcnt = 0;
-    /* Irecv top halo into local_with_halo[0 * width] from above */
+
     if (above != MPI_PROC_NULL) {
-        MPI_Irecv(local_with_halo + 0 * width, width, MPI_UNSIGNED_CHAR, above, 100, MPI_COMM_WORLD, &reqs[reqcnt++]);
+        MPI_Irecv(local_with_halo, width, MPI_UNSIGNED_CHAR, above, 
+                  100, MPI_COMM_WORLD, &reqs[reqcnt++]);
     } else {
-        /* clamp top halo to first real row */
-        memcpy(local_with_halo + 0 * width, local_with_halo + 1 * width, width);
-    }
-    /* Irecv bottom halo into local_with_halo[(local_rows+1)*width] from below */
-    if (below != MPI_PROC_NULL) {
-        MPI_Irecv(local_with_halo + (local_rows + 1) * width, width, MPI_UNSIGNED_CHAR, below, 101, MPI_COMM_WORLD, &reqs[reqcnt++]);
-    } else {
-        /* clamp bottom halo to last real row */
-        memcpy(local_with_halo + (local_rows + 1) * width, local_with_halo + local_rows * width, width);
+        memcpy(local_with_halo, local_with_halo + width, width); //copy first real row (row 1) into top halo (row 0)
     }
 
-    /* Isend first real row to above (tag 101) */
-    if (above != MPI_PROC_NULL) {
-        MPI_Isend(local_with_halo + 1 * width, width, MPI_UNSIGNED_CHAR, above, 101, MPI_COMM_WORLD, &reqs[reqcnt++]);
-    }
-    /* Isend last real row to below (tag 100) */
     if (below != MPI_PROC_NULL) {
-        MPI_Isend(local_with_halo + local_rows * width, width, MPI_UNSIGNED_CHAR, below, 100, MPI_COMM_WORLD, &reqs[reqcnt++]);
+        MPI_Irecv(local_with_halo + (local_rows + 1) * width, width, MPI_UNSIGNED_CHAR, below, 
+                  101, MPI_COMM_WORLD, &reqs[reqcnt++]);
+    } else {
+        memcpy(local_with_halo + (local_rows + 1) * width, //copy last real row (row local_rows) into bottom halo
+               local_with_halo + local_rows * width, width);
     }
 
-    /* Timing: measure overlap. We measure from before posting to after finalization */
+    //Isend from boundaries
+    if (above != MPI_PROC_NULL) {
+        MPI_Isend(local_with_halo + 1 * width, width, MPI_UNSIGNED_CHAR, above, 
+                  101, MPI_COMM_WORLD, &reqs[reqcnt++]);
+    }
+    if (below != MPI_PROC_NULL) {
+        MPI_Isend(local_with_halo + local_rows * width, width, MPI_UNSIGNED_CHAR, below, 
+                  100, MPI_COMM_WORLD, &reqs[reqcnt++]);
+    }
+
     double t_start = MPI_Wtime();
 
-    /* Compute interior rows: those that don't depend on halos
-       interior rows in local index: 1 .. local_rows-2  (if local_rows >= 3)
-       We'll compute them by passing a pointer to src_with_halo at (interior_start-1)*width so sobel_on_local_chunk sees appropriate halos.
-       Simpler: compute rows r = 1..local_rows-2 by calling sobel_on_local_chunk with src offset such that its y=r maps correctly.
-    */
     if (local_rows >= 3) {
-        int interior_start = 1;
-        int interior_end = local_rows - 2;
-        int interior_count = interior_end - interior_start + 1;
-        /* src pointer should be local_with_halo + (interior_start - 1) * width
-           so that when sobel_on_local_chunk treats its internal y=1..interior_count, original mapping works */
-        unsigned char *src_ptr = local_with_halo + (interior_start - 1) * width;
-        unsigned char *dst_ptr = local_out + (interior_start - 1) * width;
+        int interior_start_row = 1;
+        int interior_count = local_rows - 2;
+        unsigned char *src_ptr = local_with_halo + (interior_start_row) * width; 
+        unsigned char *dst_ptr = local_out + (interior_start_row) * width;
         sobel_on_local_chunk(src_ptr, dst_ptr, width, interior_count);
     }
 
     double t_after_interior = MPI_Wtime();
 
-    /* Wait for halo communication to finish before computing boundaries */
     if (reqcnt > 0) {
         MPI_Waitall(reqcnt, reqs, MPI_STATUSES_IGNORE);
     }
 
     double t_after_wait = MPI_Wtime();
 
-    /* Compute boundary rows:
-       - top boundary (local row 0): src pointer = local_with_halo + 0*width (has top halo at row 0)
-       - bottom boundary (local row local_rows-1): src pointer = local_with_halo + (local_rows-1)*width
-    */
     if (local_rows >= 1) {
-        sobel_on_local_chunk(local_with_halo + 0 * width, local_out + 0 * width, width, 1);
+        sobel_on_local_chunk(local_with_halo + width, local_out, width, 1);
+
         if (local_rows > 1) {
-            sobel_on_local_chunk(local_with_halo + (local_rows - 1) * width, local_out + (local_rows - 1) * width, width, 1);
+            sobel_on_local_chunk(local_with_halo + local_rows * width, 
+                                 local_out + (local_rows - 1) * width, width, 1);
         }
     }
 
