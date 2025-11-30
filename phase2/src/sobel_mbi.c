@@ -1,4 +1,4 @@
-/* sobel_mpi.c
+/* sobel_mbi.c
  *
  * Full MPI Sobel edge detector (1D row-wise decomposition).
  *
@@ -11,10 +11,10 @@
  * - Writes output as PGM (binary P5)
  *
  * Compile:
- * mpicc -O3 -std=c99 -o sobel_mpi sobel_mpi.c -lm
+ * mpicc -O3 -std=c99 -o sobel_mbi sobel_mbi.c -lm
  *
  * Run:
- * mpirun -np 4 ./sobel_mpi input.png output.pgm [threshold]
+ * mpirun -np 4 ./sobel_mbi [input.png] output.pgm [threshold]
  *
  * Requires stb_image.h .
  */

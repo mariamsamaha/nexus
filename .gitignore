@@ -1,5 +1,5 @@
 .venv
 sobel_mbi
 *.pgm
-sobel_mbi
-*.pgm
+sequential
+.DS_Store
