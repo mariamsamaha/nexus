@@ -167,3 +167,83 @@ Tip: Pin to one core for reproducibility:
 ```bash
 taskset -c 0 sudo perf stat -e ... ./memtest stride 1 5 512
 ```
+
+---
+
+# 🌐 Phase 2: Distributed Computing (MPI)
+
+This phase implements the Sobel Edge Detector using **MPI (Message Passing Interface)** for distributed memory systems. It includes domain decomposition, halo exchange, and performance benchmarking.
+
+## 📂 Directory Structure
+
+```
+phase2/
+├── src/
+│   ├── sobel_mbi.c            # Main MPI implementation
+│   ├── mpi_latency_bandwidth.c # Network microbenchmark
+│   └── stb_image.h            # Image loading library
+├── run_scripts/
+│   ├── run_strong_scaling.sh  # Script for strong scaling test
+│   ├── run_weak_scaling.sh    # Script for weak scaling test
+│   └── run_latency_bandwidth.sh # Script for latency/bandwidth test
+├── plots/
+│   ├── scaling_plot.py        # Generates scaling graphs
+│   └── bandwidth_plot.py      # Generates latency/bandwidth graphs
+└── results/                   # Output CSVs and PNG plots
+```
+
+## 🛠️ Compilation
+
+You need an MPI implementation (e.g., OpenMPI, MPICH) installed.
+
+### 1. Compile the Sobel Application
+```bash
+mpicc -O3 -std=c99 -o phase2/src/sobel_mbi phase2/src/sobel_mbi.c -lm
+```
+
+### 2. Compile the Microbenchmark
+```bash
+mpicc -O3 -std=c99 -o phase2/src/mpi_latency_bandwidth phase2/src/mpi_latency_bandwidth.c
+```
+
+## 🚀 Running Experiments
+
+We provide automated scripts to run the benchmarks. Ensure you are in the project root directory.
+
+### 1. Latency & Bandwidth
+Measures point-to-point communication performance (ping-pong and streaming).
+```bash
+./phase2/run_scripts/run_latency_bandwidth.sh
+```
+*   **Output**: `phase2/results/latency_bandwidth/latency_bandwidth.csv`
+
+### 2. Strong Scaling
+Measures speedup with a fixed problem size (`dog.jpg`) as ranks increase (1, 2, 4, 8, 16).
+```bash
+./phase2/run_scripts/run_strong_scaling.sh
+```
+*   **Output**: `phase2/results/strong_scaling/strong_scaling.csv`
+
+### 3. Weak Scaling
+Measures efficiency with a fixed workload per rank (image size increases with ranks).
+```bash
+./phase2/run_scripts/run_weak_scaling.sh
+```
+*   **Output**: `phase2/results/weak_scaling/weak_scaling.csv`
+
+## 📊 Generating Plots
+
+Python scripts are provided to visualize the results. Requires `pandas` and `matplotlib`.
+
+```bash
+# Install dependencies (if needed)
+pip install pandas matplotlib
+
+# Generate Latency/Bandwidth Plot
+python3 phase2/plots/bandwidth_plot.py
+
+# Generate Scaling Plots (Speedup & Efficiency)
+python3 phase2/plots/scaling_plot.py
+```
+
+Plots will be saved in the respective `phase2/results/` subdirectories.
