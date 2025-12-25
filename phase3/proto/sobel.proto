@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package sobel;
+
+service SobelService {
+  rpc ProcessImage (SobelRequest) returns (SobelResponse);
+}
+
+message SobelRequest {
+  string input_path = 1;
+  int32 threshold = 2;
+}
+
+message SobelResponse {
+  string output_path = 1;
+  int64 start_time = 2;
+  int64 end_time = 3;
+}
