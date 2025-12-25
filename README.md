@@ -247,3 +247,99 @@ python3 phase2/plots/scaling_plot.py
 ```
 
 Plots will be saved in the respective `phase2/results/` subdirectories.
+
+---
+
+# 🔌 Phase 3: gRPC-Based Distributed Edge Detection
+
+Phase 3 builds on Phase 2 by introducing a remote procedure call (RPC) interface using gRPC, enabling distributed and modular execution of the Sobel edge detector while tracking request/response times.
+
+## 📂 Directory Structure
+
+```
+phase3/
+├── proto/                  # Protobuf definitions
+│   └── sobel.proto
+├── server/                 # gRPC server
+│   ├── sobel_server.py
+│   ├── sobel_pb2.py
+│   └── sobel_pb2_grpc.py
+├── client/                 # gRPC client
+│   └── sobel_client.py
+├── logs/                   # Output edge maps
+└── README.md
+```
+
+## 🛠️ Setup
+
+### 1. Create Python 3.12 Virtual Environment
+
+```bash
+python3.12 -m venv .venv312
+source .venv312/bin/activate
+```
+
+### 2. Install Dependencies
+
+```bash
+pip install grpcio grpcio-tools
+```
+
+### 3. Generate gRPC Python Code
+
+From the `phase3/` directory:
+
+```bash
+python -m grpc_tools.protoc -I proto --python_out=server --grpc_python_out=server proto/sobel.proto
+```
+
+This generates `sobel_pb2.py` and `sobel_pb2_grpc.py` in the `server/` directory.
+
+### 4. Build the Sobel Executable (from Phase 2)
+
+Ensure the MPI Sobel executable is built and executable:
+
+```bash
+cd phase2/src
+mpicc -O3 -std=c99 -o sobel_mbi sobel_mbi.c -lm
+chmod +x sobel_mbi
+```
+
+## 🚀 Running the gRPC Server
+
+**Open a terminal** and navigate to the `phase3/` directory:
+
+```bash
+cd phase3
+python server/sobel_server.py
+```
+
+**Server Details:**
+- Listens on port `50051`
+- Logs request timestamps and processing durations
+- Outputs PGM edge maps in `phase3/logs/`
+- Uses MPI with 4 processes by default
+- **Keep this terminal running** - the server will continue listening for requests
+
+## 🚀 Running the gRPC Client
+
+**Open a separate terminal** and navigate to the `phase3/client/` directory:
+
+```bash
+cd phase3/client
+python sobel_client.py
+```
+
+**Client Behavior:**
+- Sends a Sobel edge detection request to the server
+- Processes the image specified in the client code (default: `data/dog_edges.png`)
+- Prints:
+  - `output_path`: Path to the generated edge map
+  - `start_time`: Request start time (milliseconds since epoch)
+  - `end_time`: Request completion time (milliseconds since epoch)
+  - `processing_time`: Total processing duration (ms)
+
+**Important:** 
+- The server must be running (in the first terminal) before starting the client
+- You can run the client multiple times while the server is running
+- Modify `sobel_client.py` to change the input image path or threshold value
