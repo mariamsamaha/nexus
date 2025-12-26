@@ -8,9 +8,9 @@ import os
 import signal
 import sys
 
-SOBEL_EXEC = "/Users/apple/nexus/phase2/src/sobel_mbi"
-
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+SOBEL_EXEC = os.path.abspath(os.path.join(BASE_DIR, "../../phase2/src/sobel_mbi"))
+
 LOG_DIR = os.path.abspath(os.path.join(BASE_DIR, "../logs"))
 os.makedirs(LOG_DIR, exist_ok=True)
 
@@ -42,15 +42,14 @@ class SobelService(sobel_pb2_grpc.SobelServiceServicer):
             start_time=int(start_time * 1000),
             end_time=int(end_time * 1000)
         )
-
-def serve():
+def serve(port):
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=4))
     sobel_pb2_grpc.add_SobelServiceServicer_to_server(SobelService(), server)
-    server.add_insecure_port("[::]:50051")
+    
+    server.add_insecure_port(f"[::]:{port}")
     server.start()
-    print("gRPC Sobel server running on port 50051...")
+    print(f"gRPC Sobel server running on port {port}...")
 
-    # Graceful shutdown on SIGINT / Ctrl+C
     try:
         server.wait_for_termination()
     except KeyboardInterrupt:
@@ -59,4 +58,5 @@ def serve():
         print("Server stopped.")
 
 if __name__ == "__main__":
-    serve()
+    port = sys.argv[1] if len(sys.argv) > 1 else "50051"
+    serve(port)
