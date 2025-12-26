@@ -5,6 +5,8 @@ import sobel_pb2_grpc
 import subprocess
 import time
 import os
+import signal
+import sys
 
 SOBEL_EXEC = "/Users/apple/nexus/phase2/src/sobel_mbi"
 
@@ -45,9 +47,16 @@ def serve():
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=4))
     sobel_pb2_grpc.add_SobelServiceServicer_to_server(SobelService(), server)
     server.add_insecure_port("[::]:50051")
-    print("gRPC Sobel server running on port 50051...")
     server.start()
-    server.wait_for_termination()
+    print("gRPC Sobel server running on port 50051...")
+
+    # Graceful shutdown on SIGINT / Ctrl+C
+    try:
+        server.wait_for_termination()
+    except KeyboardInterrupt:
+        print("\nShutting down server gracefully...")
+        server.stop(0)
+        print("Server stopped.")
 
 if __name__ == "__main__":
     serve()
