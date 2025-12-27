@@ -3,3 +3,4 @@ sobel_mbi
 *.pgm
 sequential
 .DS_Store
+phase3/performance/__pycache__/
