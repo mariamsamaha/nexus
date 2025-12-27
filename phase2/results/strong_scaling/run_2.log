@@ -1,0 +1,4 @@
+Max total runtime: 0.000835 s
+Max interior time (overlap candidate): 0.000829 s
+Max wait time (waiting for halos): 0.000039 s
+Saved output to /Users/nourmeyy/nexus/phase2/results/strong_scaling/output_2.pgm

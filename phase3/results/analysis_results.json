@@ -1,0 +1,48 @@
+{
+  "summary": {
+    "total_requests": 90,
+    "duration_seconds": 59.81109375,
+    "overall_throughput_rps": 1.5047375721999734,
+    "latency_min_ms": 146.89183235168457,
+    "latency_max_ms": 5193.975925445557,
+    "latency_mean_ms": 577.7560419506497,
+    "latency_p95_ms": 5186.062169075012,
+    "success_count": 83,
+    "failed_count": 0,
+    "recovered_count": 7,
+    "success_rate_percent": 100.0
+  },
+  "recovery_analysis": {
+    "failure_time_ms": 1766783043380.7932,
+    "recovery_time_ms": 1766783078091.6172,
+    "recovery_duration_seconds": 34.710823974609376,
+    "baseline_latency_ms": 163.55749368667603,
+    "baseline_throughput": 4.008531685884031
+  },
+  "phase_metrics": {
+    "before_failure": {
+      "throughput_avg": 4.008531685884031,
+      "latency_p95_avg": 163.55749368667603,
+      "request_count": 54,
+      "success_rate": 100.0
+    },
+    "during_failure": {
+      "throughput_avg": 0.5624118056316151,
+      "latency_p95_avg": 5185.854172706604,
+      "request_count": 3,
+      "success_rate": 33.33333333333333
+    },
+    "after_recovery": {
+      "throughput_avg": 1.0602725879025126,
+      "latency_p95_avg": 5190.400910377502,
+      "request_count": 32,
+      "success_rate": 84.375
+    }
+  },
+  "plot_files": [
+    "./results/latency_vs_time.png",
+    "./results/throughput_vs_time.png",
+    "./results/performance_dashboard.png",
+    "./results/phase_comparison.png"
+  ]
+}

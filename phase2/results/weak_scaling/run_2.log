@@ -1,0 +1,4 @@
+Max total runtime: 0.001747 s
+Max interior time (overlap candidate): 0.001732 s
+Max wait time (waiting for halos): 0.000114 s
+Saved output to /Users/nourmeyy/nexus/phase2/results/weak_scaling/out_weak_2.pgm
